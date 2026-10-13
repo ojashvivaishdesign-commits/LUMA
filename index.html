@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>LUMA — A Living Liquid</title>
+  <meta name="description" content="An experimental, gesture-controlled liquid-glass surface. Move your hand, make a ripple, and watch the liquid settle." />
+  <meta name="theme-color" content="#F8F7F4" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='35%25' cy='30%25'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='.55' stop-color='%23DCD6FF'/%3E%3Cstop offset='1' stop-color='%23C9E8F6'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='28' fill='url(%23g)'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-state="landing" data-input="mouse">
+  <canvas id="liquid" aria-label="Interactive liquid surface"></canvas>
+  <div class="no-webgl-bg" aria-hidden="true"></div>
+
+  <!-- ===== Top bar ===== -->
+  <header class="bar">
+    <button class="brand" type="button" data-action="exit" aria-label="LUMA — back to the introduction" data-tip="Back to the introduction">
+      <span class="word">LUMA</span>
+      <span class="sub">A living liquid</span>
+    </button>
+    <div class="tools">
+      <div class="materials explore-only" role="radiogroup" aria-label="Material">
+        <button type="button" class="swatch" data-material="pearl" role="radio" aria-checked="true" data-tip="Pearl — milky, opalescent liquid"><span class="sr">Pearl</span></button>
+        <button type="button" class="swatch" data-material="lagoon" role="radio" aria-checked="false" data-tip="Lagoon — icy blue water"><span class="sr">Lagoon</span></button>
+        <button type="button" class="swatch" data-material="aurora" role="radio" aria-checked="false" data-tip="Aurora — softly colourful shimmer"><span class="sr">Aurora</span></button>
+      </div>
+      <div class="sound-pill">
+        <button type="button" class="icon" id="btn-sound" aria-pressed="false" aria-label="Sound off — turn on" data-tip="Turn on soothing water sounds">
+          <svg class="i-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>
+          <svg class="i-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z"/><path d="m16 9.5 5 5m0-5-5 5"/></svg>
+        </button>
+        <input type="range" id="volume" min="0" max="1" step="0.05" value="0.6" aria-label="Volume" data-tip="Volume" />
+      </div>
+      <button type="button" class="icon explore-only" id="btn-guide" aria-label="Gesture guide" data-tip="Gesture guide — all the ways to touch the liquid">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12"/><path d="M11 11V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M14 11V6a1.5 1.5 0 0 1 3 0v7.5c0 3.6-2.5 6.5-6 6.5-2.4 0-3.8-1-5-2.8L4.3 14.5a1.6 1.6 0 0 1 2.6-1.8L8 14"/></svg>
+      </button>
+      <button type="button" class="icon explore-only" id="btn-cursor" aria-pressed="true" aria-label="Hide fingertip indicator" data-tip="Fingertip indicator — the small glowing ring that shows where you touch. Click to hide it">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.6" class="fill"/></svg>
+      </button>
+      <button type="button" class="icon" id="btn-reset" aria-label="Reset the surface" data-tip="Calm the surface instantly (R)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/></svg>
+      </button>
+      <button type="button" class="icon explore-only" data-action="exit" aria-label="Exit to the introduction" data-tip="Exit — back to the start (camera turns off)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== Screen 1: introduction ===== -->
+  <main class="landing" id="landing" aria-labelledby="headline">
+    <h1 id="headline" tabindex="-1">Touch the <em>untouchable.</em></h1>
+    <p class="lede">An experimental surface that moves with you. Reach out, make a ripple, and watch the liquid find its way back to stillness.</p>
+    <button type="button" class="cta" data-action="enter">
+      <span>Enter the experience</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+    </button>
+    <p class="note">Best experienced with a webcam and one hand.</p>
+    <p class="error-note" id="webgl-error" hidden></p>
+  </main>
+
+  <!-- ===== Screen 2: camera setup ===== -->
+  <section class="setup" id="setup" aria-labelledby="setup-title" hidden>
+    <div class="setup-card">
+      <h2 id="setup-title" tabindex="-1">Let’s meet your hand.</h2>
+      <p class="setup-text">Allow camera access, hold one hand in front of the camera, and move it gently.</p>
+      <div class="preview-host" id="setup-preview-host"></div>
+      <div class="status" id="status" data-status="idle" role="status" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span><span class="txt">Camera is off</span>
+      </div>
+      <p class="why">Your camera is only used to follow your hand. Nothing is recorded or uploaded.</p>
+      <p class="setup-error" id="setup-error" hidden></p>
+      <div class="setup-actions">
+        <button type="button" class="cta small" id="btn-start" data-action="start" disabled>Start exploring</button>
+        <button type="button" class="link" data-action="mouse">Use a mouse instead</button>
+        <button type="button" class="link" data-action="retry" id="btn-retry" hidden>Try again</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Screen 3: exploration overlay ===== -->
+  <div class="explore-ui" id="explore-ui" aria-live="polite">
+    <p class="hint" id="hint"></p>
+    <p class="instruction" id="instruction">Move slowly. Flick gently. Let it settle.</p>
+    <div class="lost" id="lost" hidden>
+      <span class="txt">Looking for your hand…</span>
+      <button type="button" class="link" data-action="mouse" hidden>Use mouse</button>
+    </div>
+    <div class="mini-cam" id="mini-cam">
+      <button type="button" class="mini-toggle" id="btn-cam" aria-pressed="true" aria-label="Hide camera preview" data-tip="Show or hide the small camera preview">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="13" height="10" rx="2"/><path d="m16 11 5-3v8l-5-3"/></svg>
+      </button>
+      <div class="preview-host" id="mini-preview-host"></div>
+    </div>
+  </div>
+
+  <div class="cursor" id="cursor" aria-hidden="true"><i></i></div>
+  <div class="tip" id="tip" role="tooltip" hidden></div>
+
+  <!-- the one camera preview, moved between setup and the corner -->
+  <div id="preview-parking" hidden>
+    <div class="preview" id="preview">
+      <video id="cam" playsinline muted autoplay></video>
+      <canvas id="cam-overlay"></canvas>
+      <span class="ok" aria-hidden="true">✓</span>
+    </div>
+  </div>
+
+  <!-- ===== Gesture guide ===== -->
+  <dialog class="guide" id="guide" aria-labelledby="guide-title">
+    <div class="guide-inner">
+      <h2 id="guide-title">Gestures</h2>
+      <ul class="gestures">
+        <li><span class="g-ico">☝︎</span><div><b>Move</b><span>Your fingertip drags the liquid.</span><small data-mouse>Mouse: move, or click and drag</small></div></li>
+        <li><span class="g-ico">↯</span><div><b>Flick</b><span>A quick flick sends a wave.</span><small data-mouse>Mouse: a fast swipe</small></div></li>
+        <li><span class="g-ico">◎</span><div><b>Press</b><span>Pinch and hold still to press in.</span><small data-mouse>Mouse: click and hold</small></div></li>
+        <li><span class="g-ico">⟡</span><div><b>Pinch &amp; pull</b><span>Pinch thumb and index, then move.</span><small data-mouse>Mouse: Shift + drag</small></div></li>
+        <li><span class="g-ico">✋︎</span><div><b>Open palm</b><span>Close your hand, then open it wide.</span><small data-mouse>Mouse: right-click</small></div></li>
+      </ul>
+      <form method="dialog"><button class="cta small" type="submit">Got it</button></form>
+    </div>
+  </dialog>
+
+  <noscript><p class="noscript">LUMA needs JavaScript.</p></noscript>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
